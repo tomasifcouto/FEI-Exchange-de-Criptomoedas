@@ -1,0 +1,13 @@
+# Arquivos compilados
+*.exe
+*.out
+*.o
+*.obj
+
+# Arquivos de dados gerados pelo programa
+*.dat
+transactions.txt
+
+# Arquivos específicos do sistema
+.DS_Store
+Thumbs.db 
