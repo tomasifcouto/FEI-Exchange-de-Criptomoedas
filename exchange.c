@@ -1,5 +1,6 @@
 #include "exchange.h"
 #include <time.h>
+#include <ctype.h>
 
 User users[MAX_USERS];
 int num_users = 0;
@@ -9,12 +10,13 @@ void load_users(User *users, int *num_users) {
     FILE *file = fopen("users.dat", "rb");
     if (file == NULL) {
         // Criar usuário padrão se o arquivo não existir
-        strcpy(users[0].cpf, "12345678900");
+        strcpy(users[0].cpf, "123456789");
         strcpy(users[0].password, "123456");
         users[0].balance_brl = 0.0;
         users[0].balance_btc = 0.0;
         users[0].balance_eth = 0.0;
         users[0].balance_xrp = 0.0;
+        users[0].num_transactions = 0;
         *num_users = 1;
         return;
     }
@@ -51,55 +53,40 @@ void check_balance(User *user) {
     printf("Ripple: %.8f XRP\n", user->balance_xrp);
 }
 
-void save_transaction(Transaction *transaction) {
-    FILE *file = fopen("transactions.txt", "a");
-    if (file == NULL) {
-        printf("Erro ao salvar transação.\n");
-        return;
+void save_transaction(User *user, Transaction *transaction) {
+    // Se atingiu o limite, move todas as transações uma posição para trás
+    if (user->num_transactions >= MAX_TRANSACTIONS_PER_USER) {
+        for (int i = 0; i < MAX_TRANSACTIONS_PER_USER - 1; i++) {
+            user->transactions[i] = user->transactions[i + 1];
+        }
+        user->num_transactions = MAX_TRANSACTIONS_PER_USER - 1;
     }
     
-    char date_str[26];
-    struct tm *tm_info = localtime(&transaction->timestamp);
-    strftime(date_str, 26, "%Y-%m-%d %H:%M:%S", tm_info);
-    
-    fprintf(file, "Data: %s\n", date_str);
-    fprintf(file, "CPF: %s\n", transaction->cpf);
-    fprintf(file, "Tipo: %s\n", transaction->type);
-    if (strcmp(transaction->type, "deposit") != 0) {
-        fprintf(file, "Criptomoeda: %s\n", transaction->crypto);
-    }
-    fprintf(file, "Valor: %.2f\n", transaction->amount);
-    fprintf(file, "Taxa: %.2f\n", transaction->fee);
-    fprintf(file, "------------------------\n");
-    
-    fclose(file);
+    // Adiciona a nova transação
+    user->transactions[user->num_transactions] = *transaction;
+    user->num_transactions++;
 }
 
-void view_statement(char *cpf) {
-    FILE *file = fopen("transactions.txt", "r");
-    if (file == NULL) {
-        printf("Nenhuma transação encontrada.\n");
-        return;
-    }
-
-    char line[MAX_LINE];
-    int printing = 0;
-
+void view_statement(User *user) {
     printf("\n=== Extrato de Operações ===\n");
-    while (fgets(line, MAX_LINE, file) != NULL) {
-        if (strstr(line, "CPF: ") != NULL) {
-            if (strstr(line, cpf) != NULL) {
-                printing = 1;
-                printf("%s", line);
-            } else {
-                printing = 0;
-            }
-        } else if (printing) {
-            printf("%s", line);
+    
+    for (int i = 0; i < user->num_transactions; i++) {
+        Transaction *t = &user->transactions[i];
+        char date_str[26];
+        struct tm *tm_info = localtime(&t->timestamp);
+        strftime(date_str, 26, "%Y-%m-%d %H:%M:%S", tm_info);
+        
+        printf("\nData: %s\n", date_str);
+        printf("Tipo: %s\n", t->type);
+        if (strcmp(t->type, "deposit") != 0 && strcmp(t->type, "withdraw") != 0) {
+            printf("Criptomoeda: %s\n", t->crypto);
         }
+        printf("Valor: R$ %.2f\n", t->amount);
+        if (t->fee > 0) {
+            printf("Taxa: R$ %.2f\n", t->fee);
+        }
+        printf("------------------------\n");
     }
-
-    fclose(file);
 }
 
 void deposit_brl(User *user, double amount) {
@@ -119,7 +106,7 @@ void deposit_brl(User *user, double amount) {
     strcpy(transaction.type, "deposit");
     strcpy(transaction.crypto, "");
 
-    save_transaction(&transaction);
+    save_transaction(user, &transaction);
     save_users(users, num_users);
     
     printf("Depósito de R$ %.2f realizado com sucesso.\n", amount);
@@ -185,7 +172,7 @@ int withdraw_brl(User *user, double amount, char *password) {
     strcpy(transaction.type, "withdraw");
     strcpy(transaction.crypto, "");
     
-    save_transaction(&transaction);
+    save_transaction(user, &transaction);
     save_users(users, num_users);
     
     printf("Saque de R$ %.2f realizado com sucesso.\n", amount);
@@ -255,7 +242,7 @@ int buy_crypto(User *user, char *crypto, double amount_brl, char *password, Pric
     strcpy(transaction.type, "buy");
     strcpy(transaction.crypto, crypto);
     
-    save_transaction(&transaction);
+    save_transaction(user, &transaction);
     save_users(users, num_users);
     
     printf("Compra realizada com sucesso!\n");
@@ -330,7 +317,7 @@ int sell_crypto(User *user, char *crypto, double amount_crypto, char *password, 
     strcpy(transaction.type, "sell");
     strcpy(transaction.crypto, crypto);
     
-    save_transaction(&transaction);
+    save_transaction(user, &transaction);
     save_users(users, num_users);
     
     printf("Venda realizada com sucesso!\n");
@@ -383,7 +370,7 @@ int main() {
                 check_balance(&current_user);
                 break;
             case 2:
-                view_statement(current_user.cpf);
+                view_statement(&current_user);
                 break;
             case 3:
                 printf("Digite o valor para depósito: R$ ");
