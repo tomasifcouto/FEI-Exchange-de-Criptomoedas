@@ -99,4 +99,9 @@ void show_prices(Prices *prices);
 int buy_crypto(User *user, char *crypto, double amount_brl, char *password, Prices *prices);
 int sell_crypto(User *user, char *crypto, double amount_crypto, char *password, Prices *prices);
 
+// Funções de consulta e atualização
+void check_balance_by_cpf(const User *users, int num_users, const char *cpf);
+void view_statement_by_cpf(const User *users, int num_users, const char *cpf);
+void update_all_prices(Cryptocurrency *cryptocurrencies, int num_cryptocurrencies);
+
 #endif 
