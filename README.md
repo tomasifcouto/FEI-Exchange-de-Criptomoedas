@@ -35,14 +35,24 @@ Após compilar, execute o programa com:
 
 ## Funcionalidades Implementadas
 
-1. Login com CPF e senha
-2. Consulta de saldo em reais e criptomoedas
-3. Consulta de extrato de operações
-4. Depósito de reais
-5. Saque de reais (requer senha)
-6. Compra de criptomoedas (requer senha)
-7. Venda de criptomoedas (requer senha)
-8. Visualização de cotações atualizadas
+1. Login
+2. Cadastrar novo investidor
+3. Consultar saldo de investidor
+4. Consultar extrato de investidor
+5. Atualizar cotações
+0. Sair
+
+1. Excluir investidor
+2. Cadastrar criptomoeda
+3. Excluir criptomoeda
+4. Verificar saldo
+5. Depositar
+6. Sacar
+7. Comprar criptomoeda
+8. Vender criptomoeda
+9. Ver cotações
+e. Ver extrato
+0. Sair
 
 ## Taxas de Operação
 
@@ -64,12 +74,6 @@ Após compilar, execute o programa com:
 - Cada usuário pode ter até 100 transações armazenadas
 - Transações excedentes substituem as mais antigas
 
-## Usuário Padrão
-
-Para teste inicial, um usuário padrão é criado automaticamente com as seguintes credenciais:
-- CPF: 123456789
-- Senha: 123456
-
 ## Armazenamento de Dados
 
 O programa utiliza armazenamento binário para garantir a persistência dos dados:
@@ -79,7 +83,6 @@ O programa utiliza armazenamento binário para garantir a persistência dos dado
 
 ## Observações
 
-- Todas as transações são registradas com data e hora
 - O extrato mostra apenas as transações do usuário logado
 - Os saldos são atualizados automaticamente após cada operação
 - As cotações são atualizadas automaticamente com variação de ±5%

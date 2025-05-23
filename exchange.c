@@ -490,6 +490,87 @@ void load_cryptocurrencies(Cryptocurrency *cryptocurrencies, int *num_cryptocurr
     }
 }
 
+void check_balance_by_cpf(const User *users, int num_users, const char *cpf) {
+    if (!is_valid_cpf(cpf)) {
+        printf("CPF inválido.\n");
+        return;
+    }
+
+    for (int i = 0; i < num_users; i++) {
+        if (users[i].active && strcmp(users[i].cpf, cpf) == 0) {
+            printf("\n=== Saldo do Investidor ===\n");
+            printf("Nome: %s\n", users[i].name);
+            printf("CPF: %s\n", users[i].cpf);
+            printf("Saldo em Reais: R$ %.2f\n", users[i].balance_brl);
+            printf("Bitcoin: %.8f BTC\n", users[i].balance_btc);
+            printf("Ethereum: %.8f ETH\n", users[i].balance_eth);
+            printf("Ripple: %.8f XRP\n", users[i].balance_xrp);
+            return;
+        }
+    }
+    printf("Investidor não encontrado.\n");
+}
+
+void view_statement_by_cpf(const User *users, int num_users, const char *cpf) {
+    if (!is_valid_cpf(cpf)) {
+        printf("CPF inválido.\n");
+        return;
+    }
+
+    for (int i = 0; i < num_users; i++) {
+        if (users[i].active && strcmp(users[i].cpf, cpf) == 0) {
+            printf("\n=== Extrato do Investidor ===\n");
+            printf("Nome: %s\n", users[i].name);
+            printf("CPF: %s\n", users[i].cpf);
+            
+            if (users[i].num_transactions == 0) {
+                printf("\nNenhuma transação encontrada.\n");
+                return;
+            }
+
+            for (int j = 0; j < users[i].num_transactions; j++) {
+                const Transaction *t = &users[i].transactions[j];
+                char date_str[26];
+                struct tm *tm_info = localtime(&t->timestamp);
+                strftime(date_str, 26, "%Y-%m-%d %H:%M:%S", tm_info);
+                
+                printf("\nData: %s\n", date_str);
+                printf("Tipo: %s\n", t->type);
+                if (strcmp(t->type, "deposit") != 0 && strcmp(t->type, "withdraw") != 0) {
+                    printf("Criptomoeda: %s\n", t->crypto);
+                }
+                printf("Valor: R$ %.2f\n", t->amount);
+                if (t->fee > 0) {
+                    printf("Taxa: R$ %.2f\n", t->fee);
+                }
+                printf("------------------------\n");
+            }
+            return;
+        }
+    }
+    printf("Investidor não encontrado.\n");
+}
+
+void update_all_prices(Cryptocurrency *cryptocurrencies, int num_cryptocurrencies) {
+    srand(time(NULL));
+    
+    for (int i = 0; i < num_cryptocurrencies; i++) {
+        if (cryptocurrencies[i].active) {
+            double variation = (double)(rand() % 1000) / 10000.0; // 0 a 0.05 (5%)
+            if (rand() % 2) variation = -variation;
+            
+            cryptocurrencies[i].current_price *= (1.0 + variation);
+            
+            printf("Cotação de %s atualizada: R$ %.2f (variação: %.2f%%)\n",
+                   cryptocurrencies[i].name,
+                   cryptocurrencies[i].current_price,
+                   variation * 100);
+        }
+    }
+    
+    save_cryptocurrencies(cryptocurrencies, num_cryptocurrencies);
+}
+
 int main() {
     User users[MAX_USERS];
     Cryptocurrency cryptocurrencies[MAX_CRYPTOCURRENCIES];
@@ -506,7 +587,10 @@ int main() {
         printf("\n=== EXCHANGE DE CRIPTOMOEDAS ===\n");
         printf("1. Login\n");
         printf("2. Cadastrar novo investidor\n");
-        printf("3. Sair\n");
+        printf("3. Consultar saldo de investidor\n");
+        printf("4. Consultar extrato de investidor\n");
+        printf("5. Atualizar cotações\n");
+        printf("0. Sair\n");
         printf("Escolha uma opção: ");
         scanf(" %c", &option);
         
@@ -715,7 +799,27 @@ int main() {
                 }
                 break;
             }
-            case '3':
+            case '3': {
+                char cpf[CPF_LENGTH];
+                printf("\nConsulta de Saldo\n");
+                printf("CPF do investidor (apenas números): ");
+                scanf("%s", cpf);
+                check_balance_by_cpf(users, num_users, cpf);
+                break;
+            }
+            case '4': {
+                char cpf[CPF_LENGTH];
+                printf("\nConsulta de Extrato\n");
+                printf("CPF do investidor (apenas números): ");
+                scanf("%s", cpf);
+                view_statement_by_cpf(users, num_users, cpf);
+                break;
+            }
+            case '5':
+                printf("\nAtualizando cotações...\n");
+                update_all_prices(cryptocurrencies, num_cryptocurrencies);
+                break;
+            case '0':
                 printf("\nObrigado por usar nossa exchange!\n");
                 return 0;
             default:
